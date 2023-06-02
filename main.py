@@ -624,10 +624,10 @@ class Syntax(QSyntaxHighlighter):
                 char.setFontPointSize(EDITOR_FONT_SIZE * 2)
                 char.setFontWeight(QFont.DemiBold)
             case "h2":
-                char.setFontPointSize(int(EDITOR_FONT_SIZE * 1.5))
+                char.setFontPointSize(EDITOR_FONT_SIZE * 1.5)
                 char.setFontWeight(QFont.DemiBold)
             case "h3":
-                char.setFontPointSize(int(EDITOR_FONT_SIZE * 1.17))
+                char.setFontPointSize(EDITOR_FONT_SIZE * 1.17)
                 char.setFontWeight(QFont.DemiBold)
             case "italic":
                 char.setFontItalic(True)
@@ -716,6 +716,7 @@ class Text(QTextEdit):
     def eventFilter(self, obj, e):
         if self.toPlainText():
             if e.type() == QEvent.KeyPress:
+                app.setCursorFlashTime(0)
                 if e.key() == 16777249:
                     self.setReadOnly(True)
                     self.ctrl = True
@@ -723,6 +724,8 @@ class Text(QTextEdit):
                 if self.ctrl and e.key() != 16777249:
                     self.setReadOnly(False)
 
+            elif e.type() == QEvent.KeyRelease:
+                app.setCursorFlashTime(1060)
 
             elif self.ctrl and e.type() == QEvent.Wheel:
                 global EDITOR_FONT_SIZE
@@ -744,7 +747,7 @@ class Text(QTextEdit):
         self.setFontPointSize(EDITOR_FONT_SIZE)
         self.setTextCursor(cursor)
 
-        SETTINGS.setValue("editFontSize", EDITOR_FONT_SIZE)
+        SETTINGS.setValue("editFontSize", int(EDITOR_FONT_SIZE))
 
     def updateFontSize(self):
         if not self.toPlainText():
