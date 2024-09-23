@@ -1,3 +1,4 @@
-main.build
-main.dist
-other
+__pycache__
+build
+src
+data.json

@@ -1,0 +1,447 @@
+
+
+
+
+$font-size: {fontSize}px;
+$margin: {margin}px;
+$border-radius : {bdRadius}px;
+
+
+
+$foreground: {foreground};
+$foreground-text: {foreground-text};
+$background: {background};
+$background-sidebar: {background-sidebar};
+$background-titlebar: {background-titlebar};
+$background-ribbon: {background-ribbon};
+
+$mid: {mid};
+$hovered: {hovered};
+$background-selection: {background-selection};
+
+$outline: 1px solid $mid;
+$ctx-background: {background-2nd};
+
+
+
+
+* {
+	font-family: {font};
+	font-size: $font-size;
+	color: $foreground;
+	background-color: transparent;
+	outline: 0;
+	border: 0;
+
+	selection-color: $foreground-text;
+	selection-background-color: $background-selection;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+QWidget#titlebar {
+	background-color: $background-titlebar;
+}
+
+QWidget#main {
+	background-color: $background;
+}
+
+QTextEdit {
+	color: $foreground-text;
+}
+
+
+QWidget#tabs, QWidget#sidebar, QWidget#findText {
+	background-color: $background-sidebar;
+}
+
+QWidget#ribbon {
+	background-color: $background-ribbon;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+QPushButton#icon-button, QPushButton#new-tab, QLabel#size-grip {
+	padding: $margin;
+	font-family: qnotes-icons;
+}
+
+
+QLabel#size-grip {
+	padding: 0;
+}
+
+
+QPushButton#icon-button {
+	border-radius: $border-radius;
+}
+
+QPushButton#icon-button:hover, QPushButton#text-button:hover {
+	background-color: $hovered;
+}
+
+QPushButton#icon-button:checked {
+	background-color: $mid;
+}
+
+
+
+
+
+
+QPushButton#text-button {
+	padding: $margin;
+	border-radius: $border-radius;
+}
+
+
+
+
+
+
+
+QFrame#separator-fixed {
+	background-color: $mid;
+}
+
+QFrame#ctx-separator {
+	color: $mid;
+	min-height: $margin * 2;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+QMenu#context > QFrame {
+	background-color: $ctx-background;
+	border-radius: $border-radius;
+	border: $outline;
+}
+
+
+QPushButton#context-item {
+	border-radius: $border-radius;
+}
+
+QPushButton#context-item:hover  {
+	background-color: $hovered;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+QWidget#tooltip > QLabel, QFrame#dialog, QWidget#settings-wrap {
+    border-radius: $border-radius;
+    background-color: $ctx-background;
+    border: $outline;
+}
+
+
+QPushButton#dialog-btn {
+	padding: $margin;
+	border-radius: $border-radius;
+}
+
+QPushButton#dialog-btn:hover, QPushButton#dialog-btn:focus {
+	background-color: $hovered;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+QLineEdit#input {
+	border: $outline;
+	border-radius: $border-radius;
+	padding: $margin;
+}
+
+
+
+
+
+
+
+
+
+
+
+#option-label, QPushButton#color {
+	border: $outline;
+	border-radius: $border-radius;
+	padding: $margin;
+}
+
+#option-label:hover {
+	background-color: $hovered;
+}
+
+#option-label:checked {
+	background-color: $mid;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+QSlider#slider {
+	width: $font-size * 7;
+}
+
+QSlider#slider::groove:horizontal {
+	background-color: $mid; 
+	height: 2px;
+}
+
+QSlider#slider::handle:horizontal {
+	// border: $outline;
+	background-color: $mid;
+	width: $font-size; 
+	margin: - floor($font-size / 2) 0; 
+	border-radius: $border-radius;
+}
+
+
+
+
+
+
+
+
+QLabel#label-section {
+	color: $mid;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+QPushButton#close-tab {
+	font-family: qnotes-icons;
+	background-color: transparent;
+	margin-right: $margin;
+	font-size: floor($font-size / 1.5);
+}
+
+
+QPushButton#close-tab:hover {
+	color: $mid;
+}
+
+
+
+QPushButton#new-tab:hover {
+	color: $hovered;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+QListWidget#font-list::item {
+	padding: $margin;
+	border-radius: $border-radius;
+}
+
+QListWidget#font-list::item:hover, QListWidget#font-list::item:selected {
+	background-color: $hovered;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+QScrollArea {
+	border: none;
+}
+
+
+QScrollBar:vertical {
+	margin: 0; 
+	width: floor($font-size / 1.7); 
+	border: none;
+}
+
+QScrollBar::handle:vertical {
+	background-color: $mid; 
+	min-height: 30px;
+	border-radius: floor(($font-size / 1.7) / 3);
+}
+
+QScrollBar:vertical, QScrollBar::sub-page:vertical, QScrollBar::add-page:vertical, QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {
+	background-color: transparent;
+}
+
+QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {
+	height: 0; 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
