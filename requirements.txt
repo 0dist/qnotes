@@ -1,0 +1,4 @@
+libsass==0.22.0
+PyQt6==6.7.1
+PyQt6_sip==13.6.0
+pywin32==306; sys_platform == "win32"
