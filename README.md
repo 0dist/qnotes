@@ -15,6 +15,10 @@ Major Markdown features that are currently not supported:
 - Task lists
 
 
+## Build with [Nuitka](https://github.com/Nuitka/Nuitka)
+```
+nuitka --standalone --disable-console --windows-icon-from-ico=resource/logo.ico --plugin-enable=pyqt6 --include-data-dir=resource=resource --include-data-dir=widget=widget --output-dir=build --output-filename=qnotes main.py
+```
 
 ## Preview
 <img src="preview.jpg" width="750">

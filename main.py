@@ -131,12 +131,12 @@ PARAM = {
 
 
 colorParam = {
-	"foreground": "#454545",
-	"foreground-text": "#454545",
+	"foreground": "#4e4e4e",
+	"foreground-text": "#3f3f3f",
 	"background": "#fbfbfb",
-	"background-sidebar": "#f1f1f1",
-	"background-titlebar": "#f1f1f1",
-	"background-ribbon": "#f1f1f1",
+	"background-sidebar": "#f3f3f3",
+	"background-titlebar": "#f3f3f3",
+	"background-ribbon": "#f3f3f3",
 	"background-2nd": "#f0f0f0",
 
 	"link": "#6d6dfa",

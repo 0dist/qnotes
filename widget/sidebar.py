@@ -926,7 +926,7 @@ class FolderTree(QTreeView):
 							if self.checkHoverLimit(pos, index):
 								self.hoverParent(p, index)
 							else:
-								p.drawRoundedRect(rect.adjusted(self.visibleIndexes[index]["x"],0,0,0), PARAM["bdRadius"], PARAM["bdRadius"])
+								p.drawRoundedRect(rect.adjusted(self.visibleIndexes[index]["x"],0,-PARAM["margin"],0), PARAM["bdRadius"], PARAM["bdRadius"])
 								self.expandTime.start()
 						else:
 							self.drawParentRows(p, index, rect) if not self.checkHoverLimit(pos, index) else self.hoverParent(p, index)
@@ -995,7 +995,7 @@ class FolderTree(QTreeView):
 				if xText >= self.visibleIndexes[index]["xText"]:
 					break
 			rows += 1
-		p.drawRoundedRect(rect.adjusted(x,0,0, rect.height() * rows), PARAM["bdRadius"], PARAM["bdRadius"])
+		p.drawRoundedRect(rect.adjusted(x,0,-PARAM["margin"], rect.height() * rows), PARAM["bdRadius"], PARAM["bdRadius"])
 
 
 
