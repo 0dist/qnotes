@@ -16,3 +16,5 @@ Major Markdown features that are currently not supported:
 
 
 
+## Preview
+<img src="preview.jpg" width="750">
