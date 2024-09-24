@@ -870,7 +870,7 @@ class FolderTree(QTreeView):
 
 		# adjust rectange according to the pen's width
 		shift = p.pen().width() // 2
-		p.drawRoundedRect(rect.adjusted(self.viewMargin + shift,shift,-shift,-shift), PARAM["bdRadius"], PARAM["bdRadius"])
+		p.drawRoundedRect(rect.adjusted(self.viewMargin + shift,shift,-PARAM["margin"] - shift,-shift), PARAM["bdRadius"], PARAM["bdRadius"])
 		p.restore()
 
 

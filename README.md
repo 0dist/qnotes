@@ -1,6 +1,18 @@
-## What is this
-A simple note manager and text editor, featuring partial [markdown](https://daringfireball.net/projects/markdown/) support
+A simple file manager, note organizer and text editor, featuring live [markdown](https://daringfireball.net/projects/markdown) preview
 
-Currently only with availability for Windows
 
-![](example.jpg)
+## Key features:
+- Tab management
+- Customization and theming 
+- Image preview
+- Find and Replace text
+
+
+Major Markdown features that are currently not supported:
+- Blockquotes
+- Code blocks
+- Tables
+- Task lists
+
+
+
