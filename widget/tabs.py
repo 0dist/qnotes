@@ -27,76 +27,6 @@ from main import *
 
 
 
-class Dialog(QDialog):
-	def __init__(self, parent, fileName):
-		super().__init__(parent)
-		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-		self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-
-
-
-		wrapLayout = QVBoxLayout()
-		wrapLayout.setContentsMargins(QMargins())
-		wrapLayout.addWidget(frame := QFrame())
-		frame.setObjectName("dialog")
-
-		self.layout = QVBoxLayout()
-
-
-
-
-		self.msg = QLabel(f'Save changes to "<b>{fileName}</b>" before closing?')
-
-		self.btnLayout = QHBoxLayout()
-		self.btnLayout.addStretch()
-
-		for n, i in enumerate(btns := [QPushButton(i) for i in ("Save", "Don't save", "Cancel")]):
-			self.btnLayout.addWidget(i)
-			i.clicked.connect(lambda _, n=n: self.done(len(btns) - 1 - n))
-			i.setObjectName("dialog-btn")
-
-
-
-
-		self.layout.addWidget(self.msg)
-		self.layout.addLayout(self.btnLayout)
-
-		frame.setLayout(self.layout)
-		self.setLayout(wrapLayout)
-		self.exec()
-
-
-
-
-
-
-
-
-
-	def showEvent(self, e):
-		self.layout.setContentsMargins(margin := PARAM["margin"],margin,margin,margin)
-		self.layout.setSpacing(margin)
-
-		self.msg.setMargin(margin * 2)
-		self.btnLayout.setSpacing(margin)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -313,26 +243,49 @@ class Tab(QWidget):
 		p = QPainter(self.label)
 		margin = PARAM["margin"]
 		rect = self.label.rect().adjusted(margin, margin, -margin, 0)
-		iconWidth = 0
+		x, y, width, height = rect.getRect()
+
+		isImg = str(self.path).lower().endswith(tuple(PARAM["imgType"]))
+		hasIcon = self.path in DATA.get("fileIcons", [])
+
+
+
+
 		if PREFS["matchTab"] and self.parent().currentTab == self:
 			p.setPen(QColor(COLOR["foreground-text"]))
 
 
+		if isImg or hasIcon:
+			imgFont = QFont(PARAM["iconName"], int(PREFS["fontSize"] / SC_FACTOR["imgIconScale"]))
+			iconWidth = QFontMetrics(imgFont).height() + margin 
 
-		if str(self.path).lower().endswith(tuple(PARAM["imgType"])):
-			p.save()
-			iconWidth = QFontMetrics(iconFont := QFont(PARAM["iconName"], int(PREFS["fontSize"] / SC_FACTOR["imgIconScale"]))).height()
-			p.setFont(iconFont)
-			p.drawText(rect.adjusted(0,0,0,-margin), Qt.AlignmentFlag.AlignVCenter, ICON["img"])
-			p.restore()
+		if isImg:
+			x = self.drawTabIcon(p, imgFont, ICON["img"], x, y, iconWidth, height - margin)
+
+		if hasIcon:
+			icon = chr(int(DATA["fileIcons"][self.path], 16))
+			x = self.drawTabIcon(p, QFont("Material Symbols Outlined"), icon, x, y, iconWidth, height - margin)
 
 
-		rect.adjust((iconWidth + margin) if iconWidth else 0,0,0,0)
-		elided = QFontMetrics(p.font()).elidedText(self.label.text(), Qt.TextElideMode.ElideRight, rect.width())
-		p.drawText(rect, Qt.AlignmentFlag.AlignTop, elided)
+
+
+		elided = QFontMetrics(p.font()).elidedText(self.label.text(), Qt.TextElideMode.ElideRight, width - x + margin)
+		p.drawText(x, y, width, height, Qt.AlignmentFlag.AlignTop, elided)
 		p.end()
 
 
+
+
+
+
+
+	def drawTabIcon(self, p, font, icon, x, y, iconWidth, height):
+		p.save()
+		p.setFont(font)
+		p.drawText(x, y, iconWidth, height, Qt.AlignmentFlag.AlignVCenter, icon)
+		p.restore()
+
+		return x + iconWidth
 
 
 
@@ -482,8 +435,20 @@ class Tab(QWidget):
 
 				if elem["main"].validDir():
 					menu.addSeparator()
-					menu.addRow("Show in sidebar", ICON["showInTree"], self.revealIndex)
+					menu.addRow("Show in sidebar", ICON["showInTree"], self.scrollToIndex)
 					menu.addRow("Show in folder", ICON["showInFolder"], lambda: elem["tree"].revealItem(self.path))
+
+					menu.addSeparator()
+					menu.addRow("Set icon", ICON["addIcon"], lambda: IconPicker(self, e.globalPos(), self.path))
+					if self.path in DATA.get("fileIcons", []):
+						menu.addRow("Remove icon", ICON["removeIcon"], lambda: (
+							DATA["fileIcons"].pop(self.path), 
+							elem["tabBar"].update(), 
+							elem["tree"].update())
+						)
+
+					menu.addSeparator()
+					menu.addRow("Rename file", ICON["rename"], lambda: self.scrollToIndex(rename=True))
 					menu.addSeparator()
 					menu.addRow("Delete file", ICON["delete"], lambda: elem["tree"].deleteItems(self.path))
 			menu.exec(e.globalPos())
@@ -498,12 +463,18 @@ class Tab(QWidget):
 			[self.parent().closeTab(i.widget(), ignoreSave=True) for i in tabList]
 
 
-	def revealIndex(self):
-		elem["tree"].focused = index = elem["tree"].model().index(self.path)
-		elem["tree"].revealTime.start()
-		elem["tree"].scrollTo(index, QAbstractItemView.ScrollHint.EnsureVisible)
-		elem["tree"].update()
 
+
+	def scrollToIndex(self, rename=False):
+		tree = elem["tree"]
+		tree.focused = tree.model().index(self.path)
+
+		if not rename:
+			tree.revealTime.start()
+		else:
+			tree.editNewIndex = tree.focused
+		tree.scrollTo(tree.focused, QAbstractItemView.ScrollHint.EnsureVisible)
+		tree.update()
 
 
 

@@ -212,9 +212,7 @@ class Syntax(QSyntaxHighlighter):
 				char.setFontUnderline(True)
 			case "list":
 				char.setForeground(QColor(COLOR["mid-text"]))
-			case "unorderList":
-				char.setForeground(QColor("transparent"))
-			case "rule":
+			case "unorderList" | "rule":
 				char.setForeground(QColor("transparent"))
 			case "superscript":
 				char.setVerticalAlignment(QTextCharFormat.VerticalAlignment.AlignSuperScript)
@@ -750,7 +748,7 @@ class Text(QTextEdit):
 		self.verticalScrollBar().setValue(int(self.verticalScrollBar().value() - self.delta))
 
 		self.delta *= self.scrollDecay
-		if abs(self.delta) < 0.1:
+		if abs(self.delta) < 1:
 			self.scrollTimer.stop()
 
 
@@ -1045,6 +1043,10 @@ class Text(QTextEdit):
 		if bulletGlyph:
 			p.setPen(QColor(COLOR["mid-text"]))
 
+			rawFont = bulletGlyph.rawFont()
+			rawFont.setPixelSize(PREFS["textFontSize"] * SC_FACTOR["bulletGlyph"])
+			
+			bulletGlyph.setRawFont(rawFont)
 			bulletGlyph.setPositions(bulletPos)
 			bulletGlyph.setGlyphIndexes([bulletGlyph.rawFont().glyphIndexesForString("\u2022")[0]] * len(bulletPos))
 			p.drawGlyphRun(QPointF(), bulletGlyph)
@@ -1449,7 +1451,6 @@ class Text(QTextEdit):
 		else:
 			func(cursor)
 		cursor.endEditBlock()
-
 
 
 

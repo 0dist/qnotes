@@ -46,20 +46,15 @@ class Ribbon(QWidget):
 
 
 		self.layout = QVBoxLayout()
-
-
-		line = separator()
-		self.sidebar = QPushButton(ICON["sidebar"])
-		self.treeState = QPushButton()
 		self.btns = (
-			self.sidebar, 
+			sidebar := QPushButton(ICON["sidebar"]),
 			newFile := QPushButton(ICON["newNote"]), 
 			newFolder := QPushButton(ICON["newFolder"]), 
-			self.treeState, 
-			settings := QPushButton(ICON["settings"]))
+			treeState := QPushButton(),
+			settings := QPushButton(ICON["settings"])
+		)
 
-
-		self.updateIcon = lambda: self.treeState.setText(ICON["collapseTree"] if self.expanded else ICON["expandTree"])
+		self.updateIcon = lambda: treeState.setText(ICON["collapseTree"] if self.expanded else ICON["expandTree"])
 
 
 
@@ -70,7 +65,7 @@ class Ribbon(QWidget):
 
 
 
-		self.sidebar.clicked.connect(lambda: (
+		sidebar.clicked.connect(lambda: (
 			(side := elem["sidebar"]).setVisible(side.isHidden()),
 			DATA.update(hideSidebar=side.isHidden()),
 			))
@@ -80,17 +75,20 @@ class Ribbon(QWidget):
 
 		[i.clicked.connect(lambda e, i=i: self.createItem(i == newFolder)) for i in (newFile, newFolder)]
 
-		self.treeState.clicked.connect(lambda: self.toggleTree() if elem["main"].validDir() else None)
-		
+		treeState.clicked.connect(lambda: self.toggleTree() if elem["main"].validDir() else None)
 		settings.clicked.connect(lambda: (elem["tabs"].clearFocus(), elem["settings"].show()))
 
 
 
 
+		for i in self.btns:
+			self.layout.addWidget(i)
 
-		[(self.layout.addWidget(i), i.setObjectName("icon-button")) for i in self.btns]
-		self.layout.insertWidget(self.layout.indexOf(self.sidebar) + 1, line)
-		self.layout.insertStretch(self.layout.indexOf(settings), 0)
+			if i in [sidebar, treeState]:
+				self.layout.addWidget(separator())
+			i.setObjectName("icon-button")
+
+		self.layout.addStretch()
 		self.setLayout(self.layout)
 
 

@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 
-import sys, ctypes, os, re, json, random, shutil, sass, subprocess, threading, time
+import sys, ctypes, os, re, json, random, shutil, sass, subprocess, threading, time, math
 
 
 
@@ -25,6 +25,9 @@ except:
 
 elem = {}
 elem["platform"] = sys.platform
+
+
+
 
 
 
@@ -77,6 +80,11 @@ ICON = {
 	"next": "\uE021",
 	"replace": "\uE022",
 	"replaceAll": "\uE023",
+
+	"left": "\uE024",
+	"right": "\uE025",
+	"addIcon": "\uE026",
+	"removeIcon": "\uE027",
 }
 
 
@@ -93,26 +101,21 @@ SC_FACTOR = {
 
 	"iconScale": 1.5,
 	"treeIconScale": 1.2,
-	"imgIconScale": 1.4,
+	"treeIconMrgn": 8,
+	"imgIconScale": 1.6,
+	"bulletGlyph": 1.2,
 
 	"ctxIconMrgn": 3.6,
 	"ctxYPos": 1.3,
-	"treeIconMrgn": 5.5,
 	"tabHeight": 2.5,
 	"tabWidth": 9,
 	"iconTab": 0.7,
 	"radius": 3.3,
 
 	"sidebarMin": 12,
-	"fontView": 16,
+	"fontBoxSize": 20,
 
 }
-
-
-
-
-
-
 
 
 
@@ -124,19 +127,20 @@ PARAM = {
 	"settAlpha": 0.8,
 	"imgType": ["png", "jpg", "jpeg", "gif", "bmp", "tiff", "svg", "ico", "webp"],
 	"tabNameLen": 20,
-	"settMargin": 250,
-	"iconName": "qnotes-icons"
+	"settMargin": 300,
+	"iconName": "qnotes-icons",
+	"titleHeight": 26
 
 }
 
 
 colorParam = {
-	"foreground": "#4e4e4e",
-	"foreground-text": "#3f3f3f",
-	"background": "#fbfbfb",
-	"background-sidebar": "#f3f3f3",
-	"background-titlebar": "#f3f3f3",
-	"background-ribbon": "#f3f3f3",
+	"foreground": "#494949",
+	"foreground-text": "#3d3d3d",
+	"background": "#f9f9f9",
+	"background-sidebar": "#f1f1f1",
+	"background-titlebar": "#f1f1f1",
+	"background-ribbon": "#f1f1f1",
 	"background-2nd": "#f0f0f0",
 
 	"link": "#6d6dfa",
@@ -148,6 +152,8 @@ colorParam = {
 
 prefParam = {
 	"fontSize": 16,
+	"treeGuides": True,
+	
 	"textFontSize": 16,
 	"textMargin": 40,
 	"tabSize": 50,
@@ -207,6 +213,8 @@ def setFontConf():
 
 
 from widget.ribbon import *
+from widget.widgets import *
+from widget.icon_picker import *
 from widget.sidebar import *
 from widget.text import *
 from widget.tabs import *
@@ -253,8 +261,13 @@ class Main(Frameless if isWin else QWidget):
 		self.setObjectName("main")
 
 		QFontDatabase.addApplicationFont(f"resource/{PARAM['iconName']}.ttf")
-		self.updateStylesheet()
+		QFontDatabase.addApplicationFont(f"resource/MaterialSymbols/MaterialSymbolsOutlined.ttf")
+		with open("resource/MaterialSymbols/MaterialSymbolsOutlined.json", "r") as file:
+			self.materialIcons = json.load(file)
 
+
+
+		self.updateStylesheet()
 		self.validDir = lambda: os.path.exists(DATA.get("folderPath", ""))
 		self.flashTime = app.cursorFlashTime()
 
@@ -277,6 +290,7 @@ class Main(Frameless if isWin else QWidget):
 		
 		# elem["sidebar"].hide()
 		# elem["ribbon"].hide()
+		# elem["tabs"].hide()
 		# elem["tabBar"].hide()
 
 
@@ -329,14 +343,21 @@ class Main(Frameless if isWin else QWidget):
 	def setAppGeometry(self):
 		geom = DATA.get("appGeometry", {})
 
-		self.setGeometry(QRect(*geom["rect"])) if geom.get("rect") else self.resize(self.screen().availableGeometry().size() / 1.5)
+		if geom.get("rect"):
+			self.setGeometry(QRect(*geom["rect"]))
+		else:
+			screenGeom = self.screen().availableGeometry()
+			appGeom = QRect(QPoint(), screenGeom.size() / 1.5)
+			appGeom.moveCenter(screenGeom.center())
+			self.setGeometry(appGeom)
+
 		if geom.get("max"):
 			self.showMaximized()
 
 
 
 	def scaleInterface(self, zoomOut=False):
-		PREFS["fontSize"] = max(8, min(PREFS["fontSize"] + (1 if not zoomOut else -1), 40))
+		PREFS["fontSize"] = max(12, min(PREFS["fontSize"] + (1 if not zoomOut else -1), 40))
 		self.updateStylesheet()
 
 
@@ -357,9 +378,12 @@ class Main(Frameless if isWin else QWidget):
 
 
 		DATA.update(PREFS)
-
 		[COLOR.pop(i, None) for i in ("mid", "hovered", "background-selection", "mid-text")]
 		DATA.update(COLOR)
+
+		for path in list(DATA.get("fileIcons", [])):
+			if not os.path.exists(path):
+				DATA["fileIcons"].pop(path)
 		self.saveData()
 
 

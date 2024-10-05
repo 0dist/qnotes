@@ -29,212 +29,6 @@ from main import *
 
 
 
-class Separator(QFrame):
-	def paintEvent(self, e):
-		(p := QPainter(self)).drawLine(0, y := self.height() // 2, self.width(), y)
-		p.end()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ContextRow(QPushButton):
-	def __init__(self, parent, text, icon):
-		super().__init__(parent)
-		self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
-		self.setObjectName("context-item")
-
-		self.text = text
-		self.icon = icon
-
-
-
-
-
-	def showEvent(self, e):
-		self.iconFont = QFont(PARAM["iconName"], PARAM["iconSize"])
-		iconWidth = QFontMetrics(self.iconFont).height()
-		margin = PARAM["margin"]
-
-
-		x = int(margin * SC_FACTOR["ctxIconMrgn"]) + iconWidth
-		self.textRect = QRect(QPoint(x, 0), QFontMetrics(self.font()).size(0, self.text)).adjusted(0, 0, margin, margin * 2)
-
-
-		self.setMinimumSize(QSize(self.textRect.right(), self.textRect.height()))
-		self.parent().layout().setContentsMargins(margin,margin,margin,margin)
-		self.iconRect = QRectF(margin, 0, iconWidth, self.height())
-
-
-
-
-	def paintEvent(self, e):
-		p = QPainter(self)
-
-		p.save()
-		p.setFont(self.iconFont)
-		p.drawText(self.iconRect, Qt.AlignmentFlag.AlignVCenter, self.icon)
-		p.restore()
-
-		p.drawText(self.textRect, Qt.AlignmentFlag.AlignVCenter, self.text)
-		p.end()
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ContextMenu(QMenu):
-	def __init__(self, parent):
-		super().__init__(parent)
-		self.setWindowFlags(self.windowFlags() | Qt.WindowType.NoDropShadowWindowHint| Qt.WindowType.FramelessWindowHint)
-		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-		self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-		self.setObjectName("context")
-
-		# self.lines = []
-		wrapLayout = QVBoxLayout()
-		wrapLayout.setContentsMargins(QMargins())
-		wrapLayout.addWidget(frame := QFrame())
-		# frame.paintEvent = lambda e: self.drawSeparator(frame, e)
-
-		self.itemLayout = QVBoxLayout()
-		self.itemLayout.setSpacing(0)
-		frame.setLayout(self.itemLayout)
-		self.setLayout(wrapLayout)
-
-
-
-
-
-
-	def paintEvent(self, e):
-		super().paintEvent(e)
-		if self.geometry().bottom() > self.screen().size().height():
-			self.move(self.x(), self.y() - self.height())
-
-
-	def addRow(self, title, icon, func):
-		row = ContextRow(self, title, icon)
-		row.clicked.connect(lambda: (self.close(), func()))
-		self.itemLayout.addWidget(row)
-
-
-	def addSeparator(self):
-		(line := Separator()).setObjectName("ctx-separator")
-		self.itemLayout.addWidget(line)
-		# self.lines.append(line)
-
-
-
-	# def drawSeparator(self, frame, e):
-	# 	p = QPainter(frame)
-	# 	for i in self.lines:
-	# 		p.fillRect(QRectF(0, i.y() - 1 + i.height() / 2, frame.width(), 1), QBrush(QColor(COLOR["foreground"]), Qt.BrushStyle.SolidPattern))
-	# 	p.end()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class DragTooltip(QWidget):
-	def __init__(self, parent=None):
-		super().__init__(parent)
-		self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.ToolTip)
-		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-		self.setObjectName("tooltip")
-
-
-		layout = QHBoxLayout()
-		layout.setContentsMargins(QMargins())
-
-		self.label = QLabel()
-		layout.addWidget(self.label)
-		self.setLayout(layout)
-
-
-
-
-	def updateTooltip(self, text=False):
-		self.label.setMargin(PARAM["margin"])
-		self.label.setText(text or f"Move to <b>{self.parent().dropIndex.data(0)}</b>")
-		
-		pos = QCursor.pos()
-		self.move(pos.x(), pos.y() + int(PREFS["fontSize"] * SC_FACTOR["ctxYPos"]))
-
-		self.adjustSize()
-		self.show() if self.isHidden() else None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -264,7 +58,7 @@ class DelegateTree(QStyledItemDelegate):
 
 	def updateEditorGeometry(self, editor, option, index):
 		try:
-			editor.setGeometry(rect := option.rect.adjusted(self.parent().visibleIndexes[index]["xText"],0,0,0))
+			editor.setGeometry(rect := option.rect.adjusted(self.parent().visibleIndexes[index]["xText"], 0, -self.parent().viewMargin, 0))
 			editor.setFixedWidth(rect.width())
 		# out of the viewport
 		except:
@@ -395,13 +189,13 @@ class FolderTree(QTreeView):
 		self.lastPressed = QModelIndex()
 		self.focused = QModelIndex()
 		self.dragged = QModelIndex()
-		self.note = {"path": DATA["folderPath"], "cTime": 0}
 
 
 
 		self.restore = []
 		self.restoreLast = False
 		self.restoreNote = []
+		self.restoreIcons = []
 
 		self.rowsToDraw = []
 		self.selectedItems = []
@@ -456,17 +250,36 @@ class FolderTree(QTreeView):
 		self.viewMargin = PARAM["margin"]
 
 
+		fontSize = PREFS["fontSize"]
+		iconMargin = int(fontSize / SC_FACTOR["treeIconMrgn"])
+		iconFont = QFont(PARAM["iconName"], int(fontSize / SC_FACTOR["treeIconScale"]))
+
+		self.iconMetrics = {
+		"iconWidth": QFontMetrics(iconFont).height() + iconMargin,
+		"iconFont": iconFont,
+		"imgFont": QFont(PARAM["iconName"], int(fontSize / SC_FACTOR["imgIconScale"])),
+		"materialFont": QFont("Material Symbols Outlined")
+		}
+
+
+
+
+
+
+
+
 	def wheelEvent(self, e):
 		# scroll length
 		self.delta += e.angleDelta().y() / 5
 		# scroll speed
 		self.scrollTimer.start(10)
 
+
 	def scroll(self):
 		self.verticalScrollBar().setValue(int(self.verticalScrollBar().value() - self.delta))
 
 		self.delta *= self.scrollDecay
-		if abs(self.delta) < 0.1:
+		if abs(self.delta) < 1:
 			self.scrollTimer.stop()
 
 
@@ -531,6 +344,7 @@ class FolderTree(QTreeView):
 				break
 		else:
 			elem["tabBar"].addTab(filePath) if newTab else elem["tabBar"].setCurrentTab(filePath)
+
 
 
 
@@ -644,9 +458,13 @@ class FolderTree(QTreeView):
 				self.checkExpanded(index, oldPath, newPath)
 				shutil.move(oldPath, newPath)
 
+
 				for path, tab in self.restoreNote:
 					tab.setPath(path)
-					self.restoreNote = []
+				for oldPath, newPath, icon in self.restoreIcons:
+					DATA["fileIcons"][os.path.normpath(newPath)] = icon
+					DATA["fileIcons"].pop(oldPath, None)
+
 
 
 			except OSError as e:
@@ -660,7 +478,7 @@ class FolderTree(QTreeView):
 						os.remove(newPath)
 				self.setUpdatesEnabled(True)
 				self.restore = []
-				self.restoreNote = []
+			self.restoreNote, self.restoreIcons = [], []
 
 
 
@@ -676,15 +494,14 @@ class FolderTree(QTreeView):
 			self.setUpdatesEnabled(False)
 
 
-
-		activeTabs = self.getActiveTabs()
-		if not self.model().isDir(index):
-			for path, tab in activeTabs:
-				if os.path.samefile(oldPath, path):
-					self.restoreNote = [(newPath, tab)]
+		checkPaths = []
+		checkPaths.append((oldPath, newPath))
 
 
-		else:
+
+
+
+		if self.model().isDir(index):
 			makePath = lambda parent, dir: os.path.join(os.path.dirname(parent), os.path.basename(dir))
 
 			pattern = makePath(oldPath, oldPath)
@@ -695,17 +512,41 @@ class FolderTree(QTreeView):
 			newDirs = []
 			for root, dirs, files in os.walk(oldPath):
 				for f in files:
-					for path, tab in activeTabs:
-						if os.path.samefile(filePath := os.path.join(root, f), path):
-							self.restoreNote.append((filePath.replace(pattern, replace), tab))
+					filePath = os.path.join(root, f)
+					newFilePath = filePath.replace(pattern, replace)
+					checkPaths.append((filePath, newFilePath))
+
 
 				for d in dirs:
-					if self.isExpanded(self.model().index(dirPath := os.path.join(root, d))):
-						newDirs.append(dirPath.replace(pattern, replace))
+					dirPath = os.path.join(root, d)
+					newDirPath = dirPath.replace(pattern, replace)
+
+					if self.isExpanded(self.model().index(dirPath)):
+						newDirs.append(newDirPath)
+					checkPaths.append((dirPath, newDirPath))
 
 
 			if self.isExpanded(index) and os.listdir(oldPath):
 				self.restore = [newPath, *newDirs]
+
+
+
+
+
+		for oldPath, newPath in checkPaths:
+			for path, tab in self.getActiveTabs():
+				if os.path.samefile(oldPath, path):
+					self.restoreNote.append((newPath, tab))
+
+			if oldPath in DATA.get("fileIcons", []):
+				self.restoreIcons.append((oldPath, newPath, DATA["fileIcons"][oldPath]))
+
+
+
+
+
+
+
 
 
 
@@ -752,15 +593,10 @@ class FolderTree(QTreeView):
 
 	def drawRows(self, painter=False):
 		p = painter or QPainter(self.viewport())
+
 		indexStart = self.indexAt(QPoint(0,0))
-
 		fontSize = PREFS["fontSize"]
-		metrics = QFontMetrics(p.font())
-		iconWidth = QFontMetrics(iconFont := QFont(PARAM["iconName"], int(fontSize / SC_FACTOR["treeIconScale"]))).height()
-		imgIconFont = QFont(PARAM["iconName"], int(fontSize / SC_FACTOR["imgIconScale"]))
-
-		margin = int(fontSize / SC_FACTOR["treeIconMrgn"])
-		viewport = self.viewport().rect().adjusted(0, -fontSize, 0, fontSize)
+		guides = []
 
 
 
@@ -768,10 +604,11 @@ class FolderTree(QTreeView):
 		[self.selectedItems.remove(i) for i in self.selectedItems if not self.rowHeight(i)]
 		# unite selections
 		if not painter:
-			rects = [self.visualRect(i) for i in sorted(self.selectedItems, key=lambda index: self.visualRect(index).y()) if viewport.intersects(self.visualRect(i))]
-			if rects:
-				combRect = rects[0]
-				for rect in rects[1:]:
+			viewport = self.viewport().rect().adjusted(0, -fontSize, 0, fontSize)
+			selections = [self.visualRect(i) for i in sorted(self.selectedItems, key=lambda index: self.visualRect(index).y()) if viewport.intersects(self.visualRect(i))]
+			if selections:
+				combRect = selections[0]
+				for rect in selections[1:]:
 					if combRect.intersects(rect.adjusted(0,-1,0,0)):
 						combRect = combRect.united(rect)
 					else:
@@ -782,55 +619,81 @@ class FolderTree(QTreeView):
 
 
 
+
+
 		for index in self.rowsToDraw:
 			rect = self.visualRect(index)
 			lvl = self.indexLevel(index)
-			filePath = self.model().filePath(index)
-			isImg = str(filePath).lower().endswith(tuple(PARAM["imgType"]))
+			filePath = os.path.normpath(self.model().filePath(index))
 
 
 			if index == indexStart:
 				self.visibleIndexes = {}
 
-			[self.paintSelection(p, rect, b) for i, b in ((self.focused, True), (self.dragged, False)) if i == index]
+			[self.paintSelection(p, rect, focus=b) for i, b in ((self.focused, True), (self.dragged, False)) if i == index]
 
-			if elem["tabBar"].currentTab.path and os.path.normpath(filePath) == os.path.normpath(elem["tabBar"].currentTab.path):
+			if (tabPath := elem["tabBar"].currentTab.path) and filePath == os.path.normpath(tabPath):
 					self.paintSelection(p, rect)
 
 
 
 
+
+
 			# p.drawRect(rect)
-			viewMargin = self.viewMargin // lvl
-			x = xIcon = (viewMargin + iconWidth + margin * 2) * lvl
+			iconWidth = self.iconMetrics["iconWidth"]
+			x = xIcon = self.viewMargin + (iconWidth * lvl)
 			y = rect.y()
+			height = rect.height()
 
-			if self.model().isDir(index) or isImg:
+
+
+			if PREFS["treeGuides"]:
+				guides.extend(QLineF(xGuide := x - iconWidth * (i + 1.5), y, xGuide, y + height) for i in range(lvl - 1))
+
+
+			if self.model().isDir(index):
 				p.save()
-				icon = ICON["img"] if isImg else ICON["collapsed"] if not self.isExpanded(index) else ICON["expanded"]
+				p.setFont(self.iconMetrics["iconFont"])
 
+				x = xIcon = self.viewMargin + (iconWidth * (lvl - 1))
+				p.drawText(QRectF(x, y, iconWidth, height), Qt.AlignmentFlag.AlignCenter, ICON["collapsed" if not self.isExpanded(index) else "expanded"])
 
-				p.setFont(iconFont if not isImg else imgIconFont)
-				p.drawText(QRectF(xIcon := viewMargin + margin + x - x/lvl, y, iconWidth, rect.height()), Qt.AlignmentFlag.AlignCenter, icon)
+				x += iconWidth
 				p.restore()
 
 
 
 
+			if str(filePath).lower().endswith(tuple(PARAM["imgType"])):
+				x = self.drawIcon(p, self.iconMetrics["imgFont"], ICON["img"], x, y, iconWidth, height)
+
+
+			if filePath in DATA.get("fileIcons", []):
+				icon = chr(int(DATA["fileIcons"][filePath], 16))
+				x = self.drawIcon(p, self.iconMetrics["materialFont"], icon, x, y, iconWidth, height)
+
+
+
 			# prevent text stacking since edit input has transparent background
 			if self.state() != QAbstractItemView.State.EditingState or index != self.focused:
-				elided = metrics.elidedText(index.data(0), Qt.TextElideMode.ElideRight, rect.width() - x);
-				textRect = QRectF(x, y, rect.width() - x, rect.height())
-				p.drawText(textRect, Qt.AlignmentFlag.AlignVCenter, elided)
+				elided = p.fontMetrics().elidedText(index.data(0), Qt.TextElideMode.ElideRight, rect.width() - x - self.viewMargin);
+				p.drawText(QRectF(x, y, rect.width(), height), Qt.AlignmentFlag.AlignVCenter, elided)
+
 
 
 			if index.isValid():
-				self.visibleIndexes[index] = {"x": int(xIcon - margin), "xText": x}
+				self.visibleIndexes[index] = {"x": xIcon, "xText": x, "iconWidth": iconWidth}
 
 				if index == self.editNewIndex:
 					self.edit(index)
 					self.editNewIndex = False
 			self.rowsToDraw = []
+
+
+
+		p.setPen(QColor(COLOR["hovered"]))
+		p.drawLines(guides)
 		p.end() if not painter else None
 
 
@@ -858,6 +721,17 @@ class FolderTree(QTreeView):
 
 
 
+	def drawIcon(self, p, font, icon, x, y, iconWidth, height):
+	    p.save()
+	    p.setFont(font)
+	    p.drawText(QRectF(x, y, iconWidth, height), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, icon)
+	    p.restore()
+
+	    return x + iconWidth
+
+
+
+
 	def paintSelection(self, p, rect, focus=False):
 		p.save()
 		p.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -865,12 +739,12 @@ class FolderTree(QTreeView):
 			p.setPen(Qt.PenStyle.NoPen)
 			p.setBrush(QBrush(QColor(COLOR["hovered"]), Qt.BrushStyle.SolidPattern))
 		else:
-			p.setPen(QPen(QBrush(QColor(COLOR["hovered"]), Qt.BrushStyle.SolidPattern), 2, Qt.PenStyle.SolidLine))
+			p.setPen(QPen(QColor(COLOR["hovered"]), 2))
 
 
 		# adjust rectange according to the pen's width
 		shift = p.pen().width() // 2
-		p.drawRoundedRect(rect.adjusted(self.viewMargin + shift,shift,-PARAM["margin"] - shift,-shift), PARAM["bdRadius"], PARAM["bdRadius"])
+		p.drawRoundedRect(rect.adjusted(self.viewMargin + shift, shift, -self.viewMargin - shift, -shift), PARAM["bdRadius"], PARAM["bdRadius"])
 		p.restore()
 
 
@@ -926,7 +800,7 @@ class FolderTree(QTreeView):
 							if self.checkHoverLimit(pos, index):
 								self.hoverParent(p, index)
 							else:
-								p.drawRoundedRect(rect.adjusted(self.visibleIndexes[index]["x"],0,-PARAM["margin"],0), PARAM["bdRadius"], PARAM["bdRadius"])
+								p.drawRoundedRect(rect.adjusted(self.visibleIndexes[index]["x"], 0, -self.viewMargin, 0), PARAM["bdRadius"], PARAM["bdRadius"])
 								self.expandTime.start()
 						else:
 							self.drawParentRows(p, index, rect) if not self.checkHoverLimit(pos, index) else self.hoverParent(p, index)
@@ -982,7 +856,7 @@ class FolderTree(QTreeView):
 
 
 		x = self.visibleIndexes[index]["x"] if not root else 0
-		xText = self.visibleIndexes[index]["xText"] if not root else 0
+		xText = (x + self.visibleIndexes[index]["iconWidth"]) if not root else 0
 		rect = self.visualRect(index := self.indexAt(QPoint(0,0))) if fromTop or root else rect
 
 
@@ -995,7 +869,7 @@ class FolderTree(QTreeView):
 				if xText >= self.visibleIndexes[index]["xText"]:
 					break
 			rows += 1
-		p.drawRoundedRect(rect.adjusted(x,0,-PARAM["margin"], rect.height() * rows), PARAM["bdRadius"], PARAM["bdRadius"])
+		p.drawRoundedRect(rect.adjusted(x, 0, -self.viewMargin, rect.height() * rows), PARAM["bdRadius"], PARAM["bdRadius"])
 
 
 
@@ -1023,7 +897,7 @@ class FolderTree(QTreeView):
 
 			
 			menu = ContextMenu(self)
-			path = self.model().filePath(index)
+			path = os.path.normpath(self.model().filePath(index))
 
 
 			if single := (len(self.selectedItems) < 2):
@@ -1040,6 +914,11 @@ class FolderTree(QTreeView):
 					menu.addRow("Open in new tab", ICON["openInTab"], lambda: self.checkDuplicateTab(index, newTab=True))
 				menu.addSeparator()
 				menu.addRow("Show in folder", ICON["showInFolder"], lambda: self.revealItem(path))
+
+				menu.addSeparator()
+				menu.addRow("Set icon", ICON["addIcon"], lambda: IconPicker(self, e.globalPos(), path))
+				if path in DATA.get("fileIcons", []):
+					menu.addRow("Remove icon", ICON["removeIcon"], lambda: (DATA["fileIcons"].pop(path), elem["tabBar"].update()))
 				menu.addSeparator()
 
 
@@ -1199,8 +1078,10 @@ class FolderTree(QTreeView):
 			index = self.model().index(0,0, self.root)
 
 			while index.isValid():
-				if self.isExpanded(index):
-					state.append(cTime(self.model().filePath(index)))
+				path = self.model().filePath(index)
+
+				if os.path.exists(path) and self.isExpanded(index):
+					state.append(cTime(path))
 				index = self.indexBelow(index)
 				
 			DATA["treeState"] = state
@@ -1221,13 +1102,14 @@ class FolderTree(QTreeView):
 	# def eventFilter(self, obj, e):
 	# 	if e.type() == QEvent.Type.KeyPress:
 	# 		if e.key() == Qt.Key.Key_1:
+	# 			pass
 			
 
 
 
 
 
-		# return False
+	# 	return False
 
 
 

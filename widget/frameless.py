@@ -58,7 +58,7 @@ class Titlebar(QWidget):
 
 		for btn, paint, func in [(QPushButton(), p, f) for p, f in [(self.paintMin, self.parent().showMinimized), (self.paintMax, self.mouseDoubleClickEvent), (self.paintClose, self.parent().close)]]:
 			# button height as titlebar height
-			btn.setFixedSize(44, 26)
+			btn.setFixedSize(44, PARAM["titleHeight"])
 			btn.paintEvent = lambda e, btn=btn, paint=paint: paint(e, btn)
 
 			btn.clicked.connect(lambda _, btn=btn, func=func: (func(), btn.setAttribute(Qt.WidgetAttribute.WA_UnderMouse, False)))

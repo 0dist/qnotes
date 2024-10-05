@@ -95,6 +95,7 @@ QLabel#size-grip {
 }
 
 
+
 QPushButton#icon-button {
 	border-radius: $border-radius;
 }
@@ -112,9 +113,22 @@ QPushButton#icon-button:checked {
 
 
 
-QPushButton#text-button {
+
+
+QPushButton#text-button, QLabel#icon-item {
 	padding: $margin;
 	border-radius: $border-radius;
+}
+
+
+
+QLabel#icon-item {
+	font-family: Material Symbols Outlined;
+	font-size: floor($font-size * 1.5);
+}
+
+QLabel#icon-item:hover {
+	background-color: $hovered;
 }
 
 

@@ -20,5 +20,11 @@ Major Markdown features that are currently not supported:
 nuitka --standalone --disable-console --windows-icon-from-ico=resource/logo.ico --plugin-enable=pyqt6 --include-data-dir=resource=resource --include-data-dir=widget=widget --output-dir=build --output-filename=qnotes main.py
 ```
 
+
 ## Preview
 <img src="preview.jpg" width="750">
+
+
+
+## Attributions
+This project uses a modified version of the [Material Symbols](https://github.com/google/material-design-icons/blob/master/variablefont/MaterialSymbolsOutlined%5BFILL%2CGRAD%2Copsz%2Cwght%5D.ttf) font, created by Google and licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).

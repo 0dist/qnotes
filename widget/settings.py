@@ -17,46 +17,6 @@ from main import *
 
 
 
-# class NavButton(QPushButton):
-# 	def __init__(self, text, icon):
-# 		super().__init__()
-# 		self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
-# 		self.setObjectName("nav-btn")
-
-# 		self.text = text
-# 		self.icon = icon
-
-
-# 	def paintEvent(self, e):
-# 		super().paintEvent(e)
-# 		p = QPainter(self)
-# 		if elem["settings"].viewStack.currentIndex() == elem["settings"].btnLayout.indexOf(self):
-# 			p.save()
-# 			p.setRenderHint(QPainter.RenderHint.Antialiasing)
-# 			p.setPen(Qt.PenStyle.NoPen)
-# 			p.setBrush(QBrush(QColor(COLOR["select"]), Qt.BrushStyle.SolidPattern))
-# 			p.drawRoundedRect(self.rect(), PARAM["bdRadius"], PARAM["bdRadius"])
-# 			p.restore()
-
-
-
-# 		margin = PARAM["margin"]
-# 		iconWidth = QFontMetrics(iconFont := QFont("qicons", PARAM["iconSize"])).height()
-
-# 		p.save()
-# 		p.setFont(iconFont)
-# 		p.drawText(QRectF(margin, 0, iconWidth, self.height()), Qt.AlignmentFlag.AlignVCenter, self.icon)
-# 		p.restore()
-
-
-# 		x = int(margin * SC_FACTOR["ctxIconMrgn"]) + iconWidth
-# 		textRect = QRect(QPoint(x, 0), QFontMetrics(self.font()).size(0, self.text)).adjusted(0, 0, margin, margin * 2)
-
-# 		p.drawText(textRect, Qt.AlignmentFlag.AlignVCenter, self.text)
-# 		p.end()
-# 		if self.minimumSize() != (newSize := QSize(textRect.right(), textRect.height())):
-# 			self.setMinimumSize(newSize)
-# 			elem["settings"].showEvent(None)
 
 
 
@@ -72,51 +32,6 @@ from main import *
 
 
 
-
-
-
-
-
-
-
-
-class FramelessDialog(QDialog):
-	def __init__(self, parent=None):
-		super().__init__(parent)
-		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-		self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-		self.installEventFilter(self)
-
-
-
-		wrapLayout = QGridLayout()
-		wrapLayout.setContentsMargins(QMargins())
-		wrapLayout.addWidget(frame := QFrame(), 0,0)
-		frame.setObjectName("dialog")
-
-
-		self.layout = QVBoxLayout()
-		self.layout.setSpacing(margin := PARAM["margin"])
-		self.layout.setContentsMargins(margin,margin,margin,margin)
-
-		self.addWidget = lambda w: self.layout.addWidget(w)
-		self.addLayout = lambda l: self.layout.addLayout(l)
-		self.setResizable = lambda: wrapLayout.addWidget(SizeGrip(self), 0,0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
-
-
-
-		frame.setLayout(self.layout)
-		self.setLayout(wrapLayout)
-
-
-
-
-
-
-	def eventFilter(self, obj, e):
-		if e.type() == QEvent.Type.WindowDeactivate:
-			self.deleteLater()
-		return False
 
 
 
@@ -209,7 +124,7 @@ class ColorPicker(FramelessDialog):
 
 	def moveWidget(self):
 		btn = self.btns[0]
-		pos = btn.mapToGlobal(self.parent().pos()) + QPoint(0, btn.sizeHint().height() - 1)
+		pos = btn.mapToGlobal(QPoint()) + QPoint(0, btn.sizeHint().height() - 1)
 		self.move(pos)
 
 
@@ -363,26 +278,6 @@ class ColorPicker(FramelessDialog):
 
 
 
-class SizeGrip(QLabel):
-	def __init__(self, parent):
-		super().__init__(ICON["grip"])
-		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-		self.setObjectName("size-grip")
-		self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-
-		self.parent = parent
-		self.mousePressEvent = lambda e: setattr(self, "startPos", e.pos())
-
-
-	def mouseMoveEvent(self, e):
-		if e.buttons() == Qt.MouseButton.LeftButton:
-			delta = e.pos() - self.startPos
-			rect = self.parent.geometry()
-
-			rect.setBottomRight(rect.bottomRight() + delta)
-			self.parent.setGeometry(rect)
-	
-
 
 
 
@@ -471,8 +366,8 @@ class FontView(FramelessDialog):
 
 	def setSizes(self):
 		btn = self.btns[0]
-		pos = btn.mapToGlobal(self.parent().pos()) + QPoint(0, btn.sizeHint().height() - 1)
-		size = QSize(PREFS["fontSize"], PREFS["fontSize"]) * SC_FACTOR["fontView"]
+		pos = btn.mapToGlobal(QPoint()) + QPoint(0, btn.sizeHint().height() - 1)
+		size = QSize(PREFS["fontSize"], PREFS["fontSize"]) * SC_FACTOR["fontBoxSize"]
 		self.setGeometry(QRect(pos, size))
 
 
@@ -519,84 +414,6 @@ class FontView(FramelessDialog):
 
 
 
-
-
-
-
-
-class Toggle(QPushButton):
-	def __init__(self, dictName, key):
-		super().__init__()
-		self.setCheckable(True)
-
-		self.clicked.connect(lambda: (
-			dictName.update({key: not dictName[key]}),
-			self.toggleAnimation()))
-
-		elem["settings"].settingsShown.connect(lambda: self.setFixedWidth(int(PREFS["fontSize"] * 2.5)))
-		self.setChecked(dictName[key])
-
-
-
-		self.knobX = int(dictName[key])
-		self.anim = QPropertyAnimation(self, b"knobPos")
-		self.anim.setDuration(50)
-		self.anim.setStartValue(0)
-		self.anim.setEndValue(1)
-
-		self.anim.finished.connect(lambda: QTimer.singleShot(1, elem["main"].updateStylesheet))
-
-
-
-
-
-
-
-	def toggleAnimation(self):
-		self.anim.setDirection(QPropertyAnimation.Direction.Forward if self.isChecked() else QPropertyAnimation.Direction.Backward)
-		self.anim.start()
-
-
-	@pyqtProperty(float)
-	def knobPos(self):
-		return self.knobX
-
-	@knobPos.setter
-	def knobPos(self, val):
-		self.knobX = val
-		self.update()
-
-
-
-
-
-
-	def paintEvent(self, e):
-		p = QPainter(self)
-		p.setPen(Qt.PenStyle.NoPen)
-		p.setRenderHint(QPainter.RenderHint.Antialiasing)
-		p.save()
-
-		rect = self.rect().toRectF()
-		bdHalf = 1/2 # fixed 1px border
-		r = rect.height() // 2
-
-
-
-		if (on := self.isChecked()):
-			p.setBrush(QBrush(QColor(COLOR["hovered"]), Qt.BrushStyle.SolidPattern))
-
-		p.setPen(QColor(COLOR["mid"]))
-		p.drawRoundedRect(rect.adjusted(bdHalf,bdHalf,-bdHalf,-bdHalf), r, r)
-
-
-		p.restore()
-		width = rect.width() - rect.height()
-		x = self.knobX * width
-
-		p.setBrush(QBrush(QColor(COLOR["mid"]), Qt.BrushStyle.SolidPattern))
-		p.drawRoundedRect(rect.adjusted(x, 0, x - width, 0), r, r)
-		p.end()
 
 
 
@@ -721,6 +538,7 @@ class Settings(QWidget):
 	def __init__(self, parent):
 		super().__init__(parent)
 		elem["settings"] = self
+		self.move(0, PARAM["titleHeight"] if elem["platform"] == "win32" else 0)
 		self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
 		self.setObjectName("settings")
 
@@ -728,10 +546,10 @@ class Settings(QWidget):
 
 		self.wrap = QGridLayout()
 
-
-
 		main = QWidget()
 		main.setObjectName("settings-wrap")
+
+
 
 		self.layout = QGridLayout()
 		self.layout.setContentsMargins(QMargins())
@@ -739,8 +557,10 @@ class Settings(QWidget):
 
 		self.view = View()
 		self.generalSect()
+		self.sidebarSect()
 		self.editorSect()
 		self.appearSect()
+
 		self.layout.addWidget(self.view,0,0)
 		main.setLayout(self.layout)
 
@@ -776,7 +596,7 @@ class Settings(QWidget):
 
 	def eventFilter(self, obj, e):
 		if self.isVisible() and e.type() == QEvent.Type.Resize:
-			self.resize(self.parent().size())
+			self.resize(self.parent().size().shrunkBy(QMargins(0,0,0, PARAM["titleHeight"] if elem["platform"] == "win32" else 0)))
 		return False
 
 
@@ -788,7 +608,7 @@ class Settings(QWidget):
 
 
 		m = PARAM["settMargin"] - PREFS["fontSize"] * margin
-		self.wrap.setContentsMargins(m,m,m,m)
+		self.wrap.setContentsMargins(m, m // 4, m, m // 4)
 		self.setStyleSheet(f"""QWidget#settings{{background-color: rgba({','.join(str(i) for i in QColor(COLOR['background-2nd']).getRgb()[:-1])}, {PARAM['settAlpha']})}}""")
 
 		self.settingsShown.emit()
@@ -880,6 +700,22 @@ class Settings(QWidget):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+	def sidebarSect(self):
+		self.view.addRow("Sidebar", section=True)
+
+
+		self.view.addRow("File tree guides", [Toggle(PREFS, "treeGuides")])
 
 
 
