@@ -604,11 +604,12 @@ class Text(QTextEdit):
 
 
 
+		self.flashTime = elem["app"].cursorFlashTime()
 
 		self.flashTimer = QTimer()
 		self.flashTimer.setInterval(100)
 		self.flashTimer.setSingleShot(True)
-		self.flashTimer.timeout.connect(lambda: elem["app"].setCursorFlashTime(elem["main"].flashTime))
+		self.flashTimer.timeout.connect(lambda: elem["app"].setCursorFlashTime(self.flashTime))
 
 
 
@@ -1579,6 +1580,7 @@ class Text(QTextEdit):
 		cursor = self.textCursor()
 		posCursor = self.cursorForPosition(e.pos())
 		menu = ContextMenu(self)
+		self.keepCursor = True
 
 
 
@@ -1615,12 +1617,20 @@ class Text(QTextEdit):
 
 
 		menu.exec(e.globalPos())
+		self.keepCursor = False
+		if not self.hasFocus():
+			self.focusOutEvent(QFocusEvent(QFocusEvent.Type.FocusOut, Qt.FocusReason.PopupFocusReason))
+
+
 
 
 
 
 
 	def focusOutEvent(self, e):
+		if not self.keepCursor:
+			super().focusOutEvent(e)
+
 		if self.path and os.path.exists(self.path):
 			elem["tabBar"].writeContents(self.path, self)
 

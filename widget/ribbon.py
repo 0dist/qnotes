@@ -54,7 +54,7 @@ class Ribbon(QWidget):
 			settings := QPushButton(ICON["settings"])
 		)
 
-		self.updateIcon = lambda: treeState.setText(ICON["collapseTree"] if self.expanded else ICON["expandTree"])
+		self.updateIcon = lambda: treeState.setText(ICON["collapseTree" if self.expanded else "expandTree"])
 
 
 
@@ -84,11 +84,11 @@ class Ribbon(QWidget):
 		for i in self.btns:
 			self.layout.addWidget(i)
 
-			if i in [sidebar, treeState]:
+			if i == sidebar:
 				self.layout.addWidget(separator())
+			elif i == treeState:
+				self.layout.addStretch()
 			i.setObjectName("icon-button")
-
-		self.layout.addStretch()
 		self.setLayout(self.layout)
 
 

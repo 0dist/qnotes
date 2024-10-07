@@ -173,9 +173,6 @@ class Tab(QWidget):
 		self.label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 		self.label.setMouseTracking(True)
 		self.label.paintEvent = self.paintLabel
-		self.setTabTitle = lambda text: self.label.setText(text[:PARAM["tabNameLen"]]) if text else self.label.setText("Untitled")
-
-
 
 
 
@@ -189,6 +186,11 @@ class Tab(QWidget):
 		self.setLayout(self.layout)
 
 
+
+
+
+		self.setTabTitle = lambda text: self.label.setText(text[:PARAM["tabNameLen"]]) if text else self.label.setText("Untitled")
+		self.updateAppTitle = lambda: elem["main"].setWindowTitle(os.path.splitext(os.path.basename(self.path))[0] if self.path else None)
 
 		self.lastPos = 0
 		self.setPath(path)
@@ -302,6 +304,9 @@ class Tab(QWidget):
 		tabPane = elem["tabBar"].tabStack.widget(elem["tabBar"].layout.indexOf(self))
 		if tabPane:
 			tabPane.textWidget.path = path
+		if elem["tabBar"].currentTab == self:
+			self.updateAppTitle()
+
 
 
 
@@ -624,6 +629,7 @@ class TabBar(QWidget):
 			if elem["main"].validDir():
 				elem["tree"].update()
 			self.currentTab = widget
+			widget.updateAppTitle()
 
 
 

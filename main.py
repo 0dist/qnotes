@@ -155,7 +155,7 @@ prefParam = {
 	"treeGuides": True,
 	
 	"textFontSize": 16,
-	"textMargin": 40,
+	"textMargin": 20,
 	"tabSize": 50,
 	"cursorWidth": 2,
 	"pairBrackets": True,
@@ -257,7 +257,6 @@ class Main(Frameless if isWin else QWidget):
 	def __init__(self):
 		super().__init__()
 		elem["main"] = self
-		self.setWindowTitle(" ")
 		self.setObjectName("main")
 
 		QFontDatabase.addApplicationFont(f"resource/{PARAM['iconName']}.ttf")
@@ -266,10 +265,8 @@ class Main(Frameless if isWin else QWidget):
 			self.materialIcons = json.load(file)
 
 
-
 		self.updateStylesheet()
 		self.validDir = lambda: os.path.exists(DATA.get("folderPath", ""))
-		self.flashTime = app.cursorFlashTime()
 
 
 
